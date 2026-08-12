@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Performance Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="performance_data.js"></script>
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --surface: #1a1a2e;
+            --surface2: #16213e;
+            --border: #2a2a4a;
+            --text: #e8e8f0;
+            --text-dim: #8888aa;
+            --accent: #4361ee;
+            --morning: #ff9f43;
+            --evening: #6c5ce7;
+            --green: #2ecc71;
+            --red: #e74c3c;
+            --orange: #f39c12;
+            --blue: #3498db;
+            --purple: #9b59b6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4361ee, #6c5ce7, #ff9f43);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: .3rem;
+        }
+
+        .header .subtitle {
+            color: var(--text-dim);
+            font-size: .85rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* KPI Row */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+            transition: transform .2s, box-shadow .2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(67, 97, 238, .2);
+        }
+
+        .kpi-card .kpi-icon {
+            font-size: 1.5rem;
+            margin-bottom: .3rem;
+        }
+
+        .kpi-card .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .kpi-card .kpi-label {
+            font-size: .7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-top: .2rem;
+        }
+
+        .kpi-card.good .kpi-value {
+            color: var(--green);
+        }
+
+        .kpi-card.warn .kpi-value {
+            color: var(--orange);
+        }
+
+        .kpi-card.bad .kpi-value {
+            color: var(--red);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .kpi-card.good::before {
+            background: var(--green);
+        }
+
+        .kpi-card.warn::before {
+            background: var(--orange);
+        }
+
+        .kpi-card.bad::before {
+            background: var(--red);
+        }
+
+        /* Section */
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .section-title .icon {
+            font-size: 1.3rem;
+        }
+
+        /* Grid layouts */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media(max-width:900px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Shift comparison */
+        .shift-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .shift-card {
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+        }
+
+        .shift-card.morning {
+            background: linear-gradient(135deg, rgba(255, 159, 67, .1), rgba(255, 159, 67, .05));
+            border: 1px solid rgba(255, 159, 67, .3);
+        }
+
+        .shift-card.evening {
+            background: linear-gradient(135deg, rgba(108, 92, 231, .1), rgba(108, 92, 231, .05));
+            border: 1px solid rgba(108, 92, 231, .3);
+        }
+
+        .shift-card .shift-name {
+            font-size: .85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: .5rem;
+        }
+
+        .shift-card.morning .shift-name {
+            color: var(--morning);
+        }
+
+        .shift-card.evening .shift-name {
+            color: var(--evening);
+        }
+
+        .shift-card .big-num {
+            font-size: 2.2rem;
+            font-weight: 800;
+        }
+
+        .shift-card.morning .big-num {
+            color: var(--morning);
+        }
+
+        .shift-card.evening .big-num {
+            color: var(--evening);
+        }
+
+        .shift-card .mini-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .3rem;
+            margin-top: .8rem;
+            font-size: .75rem;
+            color: var(--text-dim);
+        }
+
+        .shift-card .mini-stats span {
+            background: rgba(255, 255, 255, .03);
+            padding: .3rem .5rem;
+            border-radius: 6px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem;
+        }
+
+        .data-table th {
+            background: var(--surface2);
+            color: var(--text-dim);
+            font-weight: 600;
+            padding: .6rem .5rem;
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+            text-transform: uppercase;
+            font-size: .7rem;
+            letter-spacing: .5px;
+        }
+
+        .data-table td {
+            padding: .55rem .5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, .05);
+        }
+
+        .data-table tr:hover {
+            background: rgba(67, 97, 238, .06);
+        }
+
+        .data-table .cell-good {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .data-table .cell-warn {
+            color: var(--orange);
+            font-weight: 600;
+        }
+
+        .data-table .cell-bad {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .data-table .weekend-row {
+            background: rgba(255, 159, 67, .04);
+        }
+
+        /* Chart containers */
+        .chart-wrap {
+            position: relative;
+            height: 300px;
+            margin-top: .5rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: .15rem .5rem;
+            border-radius: 20px;
+            font-size: .65rem;
+            font-weight: 700;
+        }
+
+        .badge-morning {
+            background: rgba(255, 159, 67, .15);
+            color: var(--morning);
+        }
+
+        .badge-evening {
+            background: rgba(108, 92, 231, .15);
+            color: var(--evening);
+        }
+
+        .badge-weekday {
+            background: rgba(52, 152, 219, .15);
+            color: var(--blue);
+        }
+
+        .badge-weekend {
+            background: rgba(255, 159, 67, .15);
+            color: var(--orange);
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, .06);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: .3rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .8s ease;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-dim);
+            font-size: .75rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>📊 Model Performance Dashboard</h1>
+        <div class="subtitle" id="dateRange"></div>
+    </div>
+
+    <div class="container">
+        <!-- KPI Row -->
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <!-- Shift Comparison -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🌅🌙</span> So Sánh Ca Sáng vs Ca Tối</div>
+            <div class="shift-cards" id="shiftCards"></div>
+        </div>
+
+        <div class="two-col">
+            <!-- Shift × DayType Matrix -->
+            <div class="section">
+                <div class="section-title"><span class="icon">🔀</span> Ca × Ngày (Cross Analysis)</div>
+                <table class="data-table" id="crossTable"></table>
+            </div>
+
+            <!-- Error Distribution -->
+            <div class="section">
+                <div class="section-title"><span class="icon">📊</span> Phân Bố Sai Số</div>
+                <div class="chart-wrap"><canvas id="distChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Weekday Detail -->
+        <div class="section">
+            <div class="section-title"><span class="icon">📅</span> Accuracy Theo Thứ Trong Tuần</div>
+            <div class="two-col">
+                <div>
+                    <table class="data-table" id="weekdayTable"></table>
+                </div>
+                <div class="chart-wrap"><canvas id="weekdayChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Weekly Trend -->
+        <div class="section">
+            <div class="section-title"><span class="icon">📈</span> Xu Hướng Accuracy Theo Tuần</div>
+            <div class="chart-wrap" style="height:350px;"><canvas id="trendChart"></canvas></div>
+        </div>
+
+        <!-- Weekday × Shift Heatmap Table -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🗓️</span> Ma Trận: Thứ × Ca (MAPE %)</div>
+            <table class="data-table" id="heatmapTable"></table>
+        </div>
+    </div>
+
+    <div class="footer">
+        Model Performance Dashboard — AI Forecast System &copy; 2026
+    </div>
+
+    <script>
+        // Helper
+        function hitClass(v) { return v >= 70 ? 'cell-good' : v >= 50 ? 'cell-warn' : 'cell-bad'; }
+        function mapeClass(v) { return v <= 15 ? 'cell-good' : v <= 25 ? 'cell-warn' : 'cell-bad'; }
+        function fmtN(v) { return v != null ? v.toLocaleString() : '—'; }
+        function fmtP(v) { return v != null ? v + '%' : '—'; }
+
+        // Date range
+        if (typeof PERF_DATE_RANGE !== 'undefined') {
+            document.getElementById('dateRange').textContent =
+                `Kỳ phân tích: ${PERF_DATE_RANGE.start} → ${PERF_DATE_RANGE.end}`;
+        }
+
+        // KPI Grid
+        (function () {
+            const o = typeof PERF_OVERALL !== 'undefined' ? PERF_OVERALL : {};
+            const kpis = [
+                { icon: '🎯', label: 'Hit Rate', value: fmtP(o.Hit_Rate), cls: (o.Hit_Rate || 0) >= 70 ? 'good' : (o.Hit_Rate || 0) >= 50 ? 'warn' : 'bad' },
+                { icon: '📏', label: 'MAE (Sai số TB)', value: (o.MAE || 0) + ' khách', cls: (o.MAE || 99) <= 10 ? 'good' : (o.MAE || 99) <= 20 ? 'warn' : 'bad' },
+                { icon: '📊', label: 'MAPE', value: fmtP(o.MAPE), cls: (o.MAPE || 99) <= 15 ? 'good' : (o.MAPE || 99) <= 25 ? 'warn' : 'bad' },
+                { icon: '⚖️', label: 'WMAPE', value: fmtP(o.WMAPE), cls: (o.WMAPE || 99) <= 15 ? 'good' : (o.WMAPE || 99) <= 25 ? 'warn' : 'bad' },
+                { icon: '📐', label: 'Bias', value: (o.Bias > 0 ? '+' : '') + o.Bias + ' khách', cls: Math.abs(o.Bias || 0) <= 5 ? 'good' : Math.abs(o.Bias || 0) <= 15 ? 'warn' : 'bad' },
+                { icon: '🔢', label: 'Số mẫu', value: fmtN(o.N), cls: 'good' },
+            ];
+            const grid = document.getElementById('kpiGrid');
+            kpis.forEach(k => {
+                grid.innerHTML += `<div class="kpi-card ${k.cls}"><div class="kpi-icon">${k.icon}</div><div class="kpi-value">${k.value}</div><div class="kpi-label">${k.label}</div></div>`;
+            });
+        })();
+
+        // Shift Cards
+        (function () {
+            const data = typeof PERF_BY_SHIFT !== 'undefined' ? PERF_BY_SHIFT : [];
+            const el = document.getElementById('shiftCards');
+            data.forEach(s => {
+                const isMorning = s.Shift === 'MORNING';
+                const cls = isMorning ? 'morning' : 'evening';
+                const icon = isMorning ? '🌅' : '🌙';
+                el.innerHTML += `
+            <div class="shift-card ${cls}">
+                <div class="shift-name">${icon} ${s.Shift_Label}</div>
+                <div class="big-num">${fmtP(s.Hit_Rate)}</div>
+                <div style="font-size:.7rem;color:var(--text-dim)">Hit Rate</div>
+                <div class="mini-stats">
+                    <span>MAE: ${s.MAE}</span><span>MAPE: ${fmtP(s.MAPE)}</span>
+                    <span>Bias: ${s.Bias > 0 ? '+' : ''}${s.Bias}</span><span>N: ${fmtN(s.N)}</span>
+                </div>
+            </div>`;
+            });
+        })();
+
+        // Cross Table (Shift × DayType)
+        (function () {
+            const data = typeof PERF_SHIFT_DAYTYPE !== 'undefined' ? PERF_SHIFT_DAYTYPE : [];
+            const el = document.getElementById('crossTable');
+            let html = `<thead><tr><th>Phân loại</th><th>Hit Rate</th><th>MAE</th><th>MAPE</th><th>Bias</th><th>N</th></tr></thead><tbody>`;
+            data.forEach(r => {
+                html += `<tr>
+            <td style="text-align:left;font-weight:600;">${r.Category}</td>
+            <td class="${hitClass(r.Hit_Rate)}">${fmtP(r.Hit_Rate)}</td>
+            <td>${r.MAE}</td><td class="${mapeClass(r.MAPE)}">${fmtP(r.MAPE)}</td>
+            <td>${r.Bias > 0 ? '+' : ''}${r.Bias}</td><td>${fmtN(r.N)}</td></tr>`;
+            });
+            el.innerHTML = html + '</tbody>';
+        })();
+
+        // Weekday Table
+        (function () {
+            const data = typeof PERF_BY_WEEKDAY !== 'undefined' ? PERF_BY_WEEKDAY : [];
+            const el = document.getElementById('weekdayTable');
+            let html = `<thead><tr><th>Thứ</th><th></th><th>Hit Rate</th><th>MAE</th><th>MAPE</th><th>Bias</th></tr></thead><tbody>`;
+            data.forEach(r => {
+                const rowCls = r.Is_Weekend ? 'weekend-row' : '';
+                const badge = r.Is_Weekend ? '<span class="badge badge-weekend">Weekend</span>' : '<span class="badge badge-weekday">Weekday</span>';
+                html += `<tr class="${rowCls}">
+            <td style="text-align:left;font-weight:600;">${r.Weekday_VN}</td><td>${badge}</td>
+            <td class="${hitClass(r.Hit_Rate)}">${fmtP(r.Hit_Rate)}</td>
+            <td>${r.MAE}</td><td class="${mapeClass(r.MAPE)}">${fmtP(r.MAPE)}</td>
+            <td>${r.Bias > 0 ? '+' : ''}${r.Bias}</td></tr>`;
+            });
+            el.innerHTML = html + '</tbody>';
+        })();
+
+        // Weekday Chart
+        (function () {
+            const data = typeof PERF_BY_WEEKDAY !== 'undefined' ? PERF_BY_WEEKDAY : [];
+            if (!data.length) return;
+            new Chart(document.getElementById('weekdayChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.Weekday_VN),
+                    datasets: [
+                        { label: 'Hit Rate %', data: data.map(d => d.Hit_Rate), backgroundColor: data.map(d => d.Is_Weekend ? 'rgba(255,159,67,.7)' : 'rgba(67,97,238,.7)'), borderRadius: 6, yAxisID: 'y' },
+                        { label: 'MAPE %', data: data.map(d => d.MAPE), type: 'line', borderColor: '#e74c3c', backgroundColor: 'rgba(231,76,60,.1)', tension: .4, yAxisID: 'y2' },
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#aaa', font: { size: 11 } } } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,.05)' }, title: { display: true, text: 'Hit Rate %', color: '#888' } },
+                        y2: { position: 'right', beginAtZero: true, ticks: { color: '#e74c3c88' }, grid: { display: false }, title: { display: true, text: 'MAPE %', color: '#e74c3c88' } },
+                        x: { ticks: { color: '#888' }, grid: { display: false } }
+                    }
+                }
+            });
+        })();
+
+        // Error Distribution Chart
+        (function () {
+            const data = typeof PERF_ERROR_DIST !== 'undefined' ? PERF_ERROR_DIST : [];
+            if (!data.length) return;
+            const colors = ['#2ecc71', '#27ae60', '#f1c40f', '#e67e22', '#e74c3c', '#c0392b', '#8e44ad'];
+            new Chart(document.getElementById('distChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.Error_Range),
+                    datasets: [{ data: data.map(d => d.Count), backgroundColor: colors.slice(0, data.length), borderColor: 'transparent', borderWidth: 2 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '55%',
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#aaa', font: { size: 10 }, padding: 8 } },
+                        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} (${data[ctx.dataIndex].Pct}%)` } }
+                    }
+                }
+            });
+        })();
+
+        // Weekly Trend Chart
+        (function () {
+            const data = typeof PERF_WEEKLY_TREND !== 'undefined' ? PERF_WEEKLY_TREND : [];
+            if (!data.length) return;
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.Week_Label),
+                    datasets: [
+                        { label: 'Hit Rate %', data: data.map(d => d.Hit_Rate), borderColor: '#2ecc71', backgroundColor: 'rgba(46,204,113,.1)', fill: true, tension: .3, pointRadius: 4, yAxisID: 'y' },
+                        { label: 'MAE', data: data.map(d => d.MAE), borderColor: '#4361ee', backgroundColor: 'rgba(67,97,238,.1)', fill: false, tension: .3, pointRadius: 3, yAxisID: 'y2' },
+                        { label: 'MAPE %', data: data.map(d => d.MAPE), borderColor: '#e74c3c', borderDash: [5, 5], fill: false, tension: .3, pointRadius: 3, yAxisID: 'y' },
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#aaa', font: { size: 11 } } } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,.05)' }, title: { display: true, text: '%', color: '#888' } },
+                        y2: { position: 'right', beginAtZero: true, ticks: { color: '#4361ee88' }, grid: { display: false }, title: { display: true, text: 'MAE (khách)', color: '#4361ee88' } },
+                        x: { ticks: { color: '#888', maxRotation: 45 }, grid: { display: false } }
+                    }
+                }
+            });
+        })();
+
+        // Heatmap Table (Weekday × Shift)
+        (function () {
+            const data = typeof PERF_WEEKDAY_SHIFT !== 'undefined' ? PERF_WEEKDAY_SHIFT : [];
+            if (!data.length) return;
+            const el = document.getElementById('heatmapTable');
+            const days = [...new Set(data.map(d => d.Weekday))];
+            const shifts = [...new Set(data.map(d => d.Shift))];
+
+            let html = '<thead><tr><th>Thứ</th>';
+            shifts.forEach(s => { html += `<th>${s} - MAPE</th><th>${s} - Hit</th>`; });
+            html += '</tr></thead><tbody>';
+
+            days.forEach(day => {
+                html += `<tr><td style="font-weight:700;text-align:left">${day}</td>`;
+                shifts.forEach(s => {
+                    const item = data.find(d => d.Weekday === day && d.Shift === s);
+                    if (item) {
+                        html += `<td class="${mapeClass(item.MAPE)}">${fmtP(item.MAPE)}</td>`;
+                        html += `<td class="${hitClass(item.Hit_Rate)}">${fmtP(item.Hit_Rate)}</td>`;
+                    } else {
+                        html += '<td>—</td><td>—</td>';
+                    }
+                });
+                html += '</tr>';
+            });
+            el.innerHTML = html + '</tbody>';
+        })();
+    </script>
+</body>
+
+</html>

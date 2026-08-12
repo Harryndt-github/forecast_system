@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📊 Phân Tích Vĩ Mô — F&B Vietnam</title>
+  <meta name="description" content="Dashboard phân tích tương quan giữa các yếu tố kinh tế vĩ mô và ngành F&B Việt Nam">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="macro_data.js"></script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <h1>📊 Phân Tích Kinh Tế Vĩ Mô — Tác Động F&B</h1>
+    <div class="subtitle">Tương quan giữa Giá Vàng, Giá Xăng, Lãi Suất, CPI và Lượt Khách / Doanh Thu nhà hàng</div>
+    <div class="meta">
+      <span>📅 T01/2022 – T03/2026 (51 tháng)</span>
+      <span>🏢 Nguồn: SBV • VGCA • SJC • PetroVietnam • GSO</span>
+      <span id="updateTime">⏰ --</span>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="container">
+
+    <!-- TAB BAR -->
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="overview">Tổng Quan</button>
+      <button class="tab" data-tab="charts">Biểu Đồ</button>
+      <button class="tab" data-tab="correlation">Tương Quan</button>
+      <button class="tab" data-tab="data">Dữ Liệu</button>
+      <button class="tab" data-tab="insights">Insights</button>
+    </div>
+
+    <!-- TAB: OVERVIEW -->
+    <div class="tab-content active" id="tab-overview">
+      <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span> Chỉ Số Mới Nhất (T03/2026)</h2>
+        <div class="kpi-grid" id="kpiGrid"></div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span> Tương Quan Mạnh Nhất (vs Lượt Khách)</h2>
+        <div class="kpi-grid" id="topCorrelations"></div>
+      </section>
+    </div>
+
+    <!-- TAB: CHARTS -->
+    <div class="tab-content" id="tab-charts">
+      <section class="section">
+        <h2 class="section-title"><span class="icon">📈</span> Xu Hướng Kinh Tế Vĩ Mô</h2>
+        <div class="chart-grid">
+          <div class="chart-wrapper">
+            <div class="chart-title">🥇 Giá Vàng SJC (triệu/lượng)</div>
+            <canvas id="chartGold" class="chart-canvas"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <div class="chart-title">⛽ Giá Xăng RON95 (đ/lít)</div>
+            <canvas id="chartGas" class="chart-canvas"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <div class="chart-title">🏦 Lãi Suất (% / năm)</div>
+            <canvas id="chartRates" class="chart-canvas"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <div class="chart-title">📊 CPI & GDP Growth (%)</div>
+            <canvas id="chartCpiGdp" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title"><span class="icon">👥</span> Lượt Khách F&B vs. Chỉ Số Vĩ Mô</h2>
+        <div class="chart-wrapper">
+          <div class="chart-title">📊 Khách hàng & Giá Xăng (Tương quan mạnh nhất)</div>
+          <canvas id="chartGuestVsMacro" class="chart-canvas"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB: CORRELATION -->
+    <div class="tab-content" id="tab-correlation">
+      <section class="section">
+        <h2 class="section-title"><span class="icon">🔬</span> Ma Trận Tương Quan Pearson</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+          Hệ số tương quan r ∈ [-1, +1]. |r| &gt; 0.7: Mạnh, 0.4–0.7: Trung bình, 0.2–0.4: Yếu, &lt; 0.2: Không đáng kể.
+          <br>📊 51 tháng dữ liệu khách F&B từ DB (01/2022–03/2026) — N=51, kết quả phân tích đáng tin cậy.
+        </p>
+        <div id="corrTable"></div>
+      </section>
+    </div>
+
+    <!-- TAB: DATA -->
+    <div class="tab-content" id="tab-data">
+      <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span> Bảng Dữ Liệu Chi Tiết (51 tháng)</h2>
+        <div class="data-table-wrap" id="dataTable"></div>
+      </section>
+    </div>
+
+    <!-- TAB: INSIGHTS -->
+    <div class="tab-content" id="tab-insights">
+      <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span> Phân Tích & Nhận Định</h2>
+        <div class="insight-list" id="insightList"></div>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    Macro Economic Analysis Dashboard — Forecast System v2.0 — Dữ liệu thu thập từ nguồn chính thức
+  </footer>
+
+  <script>
+    // ===== INITIALIZATION =====
+    document.getElementById('updateTime').textContent = `⏰ Cập nhật: ${new Date().toLocaleString('vi-VN')}`;
+
+    // ===== TABS =====
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    // ===== KPI CARDS =====
+    function renderKPIs() {
+      const latest = MACRO_DATA[MACRO_DATA.length - 1];
+      const prev = MACRO_DATA[MACRO_DATA.length - 2];
+      const guestLatest = GUEST_DATA[GUEST_DATA.length - 1];
+
+      const kpis = [
+        { key: 'gold_sjc', value: latest.gold_sjc, prev: prev.gold_sjc, fmt: v => `${v.toFixed(1)}`, accent: '#FFD700' },
+        { key: 'gas_ron95', value: latest.gas_ron95, prev: prev.gas_ron95, fmt: v => v.toLocaleString('vi-VN'), accent: '#FF6B35' },
+        { key: 'deposit_rate', value: latest.deposit_rate, prev: prev.deposit_rate, fmt: v => `${v.toFixed(2)}%`, accent: '#4ECDC4' },
+        { key: 'lending_rate', value: latest.lending_rate, prev: prev.lending_rate, fmt: v => `${v.toFixed(2)}%`, accent: '#E74C3C' },
+        { key: 'cpi', value: latest.cpi, prev: prev.cpi, fmt: v => `${v.toFixed(2)}%`, accent: '#9B59B6' },
+        { key: 'gdp_growth', value: latest.gdp_growth, prev: prev.gdp_growth, fmt: v => `${v.toFixed(2)}%`, accent: '#27AE60' },
+      ];
+
+      if (guestLatest) {
+        kpis.push({
+          key: 'total_guests',
+          value: guestLatest.total_guests,
+          prev: GUEST_DATA.length > 1 ? GUEST_DATA[GUEST_DATA.length - 2].total_guests : null,
+          fmt: v => v.toLocaleString('vi-VN'),
+          accent: '#E67E22',
+        });
+      }
+
+      const grid = document.getElementById('kpiGrid');
+      grid.innerHTML = kpis.map(k => {
+        const meta = COLUMN_META[k.key];
+        const change = k.prev ? ((k.value - k.prev) / k.prev * 100).toFixed(1) : null;
+        const changeClass = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
+        const changeText = change !== null ? `${change > 0 ? '▲' : change < 0 ? '▼' : '–'} ${Math.abs(change)}% vs tháng trước` : '';
+
+        return `
+          <div class="kpi-card" style="--card-accent: ${k.accent}">
+            <div class="kpi-icon">${meta.icon}</div>
+            <div class="kpi-label">${meta.label}</div>
+            <div class="kpi-value">${k.fmt(k.value)} <span class="kpi-unit">${meta.unit}</span></div>
+            ${changeText ? `<div class="kpi-change ${changeClass}">${changeText}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ===== TOP CORRELATIONS =====
+    function renderTopCorrelations() {
+      const grid = document.getElementById('topCorrelations');
+      const top4 = CORRELATIONS.slice(0, 4);
+
+      grid.innerHTML = top4.map(c => {
+        const strengthClass = c.absR >= 0.7 ? 'strong' : c.absR >= 0.4 ? 'medium' : c.absR >= 0.2 ? 'weak' : 'none';
+        return `
+          <div class="kpi-card" style="--card-accent: ${COLUMN_META[c.key].color}">
+            <div class="kpi-icon">${c.icon}</div>
+            <div class="kpi-label">${c.label}</div>
+            <div class="kpi-value corr-value ${strengthClass}">${c.r >= 0 ? '+' : ''}${c.r.toFixed(4)}</div>
+            <div style="margin-top: 0.35rem;">
+              <span class="strength-badge ${strengthClass}">${c.strength}</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 0.5rem;">${c.direction}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ===== CORRELATION TABLE =====
+    function renderCorrTable() {
+      const div = document.getElementById('corrTable');
+      if (CORRELATIONS.length === 0) {
+        div.innerHTML = '<p style="color: var(--text-muted);">Không đủ dữ liệu để tính tương quan (cần ≥ 3 tháng).</p>';
+        return;
+      }
+
+      div.innerHTML = `
+        <table class="corr-table">
+          <thead>
+            <tr>
+              <th>Yếu Tố Vĩ Mô</th>
+              <th>Hệ Số r</th>
+              <th>|r|</th>
+              <th>Hướng</th>
+              <th>Mức Độ</th>
+              <th>N</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${CORRELATIONS.map(c => {
+              const strengthClass = c.absR >= 0.7 ? 'strong' : c.absR >= 0.4 ? 'medium' : c.absR >= 0.2 ? 'weak' : 'none';
+              return `
+                <tr>
+                  <td>${c.icon} ${c.label}</td>
+                  <td class="corr-value ${strengthClass}">${c.r >= 0 ? '+' : ''}${c.r.toFixed(4)}</td>
+                  <td>${c.absR.toFixed(4)}</td>
+                  <td>${c.direction}</td>
+                  <td><span class="strength-badge ${strengthClass}">${c.strength}</span></td>
+                  <td style="color: var(--text-muted)">${c.n}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // ===== DATA TABLE =====
+    function renderDataTable() {
+      const div = document.getElementById('dataTable');
+      const cols = ['gold_sjc', 'gas_ron95', 'deposit_rate', 'lending_rate', 'cpi', 'gdp_growth', 'tourism_intl'];
+
+      div.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Tháng</th>
+              ${cols.map(c => `<th>${COLUMN_META[c].icon} ${COLUMN_META[c].label}</th>`).join('')}
+              <th>👥 Lượt Khách</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${MERGED_DATA.map(d => `
+              <tr class="${d.has_guest_data ? 'has-guest' : ''}">
+                <td>${d.label}</td>
+                <td>${d.gold_sjc.toFixed(1)}</td>
+                <td>${d.gas_ron95.toLocaleString('vi-VN')}</td>
+                <td>${d.deposit_rate.toFixed(2)}%</td>
+                <td>${d.lending_rate.toFixed(2)}%</td>
+                <td>${d.cpi.toFixed(2)}%</td>
+                <td>${d.gdp_growth.toFixed(2)}%</td>
+                <td>${d.tourism_intl.toFixed(2)}</td>
+                <td style="font-weight: ${d.has_guest_data ? '700' : '400'}; color: ${d.has_guest_data ? 'var(--accent-green)' : 'var(--text-muted)'}">
+                  ${d.has_guest_data ? d.total_guests.toLocaleString('vi-VN') : '—'}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // ===== INSIGHTS =====
+    function renderInsights() {
+      const insights = [
+        { icon: '💰', text: 'LÃI SUẤT CHO VAY là yếu tố ảnh hưởng MẠNH NHẤT (r = -0.9190, Mạnh): Khi LS cho vay giảm từ 9.2% → 6.6%, lượt khách tăng mạnh. DN + cá nhân có chi phí vay thấp hơn → tăng chi tiêu ăn uống.' },
+        { icon: '🥇', text: 'GIÁ VÀNG SJC tương quan MẠNH thuận chiều (r = +0.7672): Vàng tăng 62 → 175 triệu (+182%), khách vẫn tăng. Giá vàng không ảnh hưởng tiêu cực đến F&B — cùng xu hướng tăng trưởng kinh tế.' },
+        { icon: '🏦', text: 'LS HUY ĐỘNG có tương quan nghịch TRUNG BÌNH (r = -0.4709): Khi LS huy động cao (đỉnh 7.4% đầu 2023), người dân gửi tiết kiệm nhiều hơn, chi tiêu ăn uống giảm.' },
+        { icon: '⛽', text: 'GIÁ XĂNG RON95 ảnh hưởng KHÔNG ĐÁNG KỂ (r = -0.0959): Biến động xăng 21,000–31,500 đ/lít không tác động rõ rệt đến lượt khách nhà hàng.' },
+        { icon: '💵', text: 'Với DOANH THU: LS Cho Vay (r = -0.6201, TB) và Giá Vàng (r = +0.5865, TB) cũng là hai yếu tố ảnh hưởng lớn nhất. LS Huy Động và Giá Xăng ít tác động.' },
+        { icon: '📊', text: 'Lưu ý: Dữ liệu khách 2022 có hiện tượng bất thường (giảm mạnh từ T03/2022, có thể do chuyển đổi hệ thống payment hub). Giai đoạn 2023-2026 ổn định hơn.' },
+        { icon: '📈', text: 'Xu hướng tổng thể: Lượt khách tăng từ ~1.3M/tháng (2023) → ~3.5M/tháng (2024 H2-2026) — tăng gấp ~2.7 lần, đồng hành với GDP tăng trưởng và LS cho vay giảm.' },
+        { icon: '💡', text: 'KHUYẾN NGHỊ: Tích hợp LS Cho Vay và Giá Vàng vào model forecast như macro features. Theo dõi chính sách SBV về lãi suất để dự báo xu hướng khách.' },
+      ];
+
+      document.getElementById('insightList').innerHTML = insights.map(i => `
+        <div class="insight-item">
+          <span class="insight-icon">${i.icon}</span>
+          ${i.text}
+        </div>
+      `).join('');
+    }
+
+    // ===== CHARTS (Chart.js) =====
+    const chartDefaults = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#95A5A6', font: { family: 'Inter', size: 11 } } },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#7F8C8D', font: { size: 10 }, maxRotation: 45 },
+          grid: { color: 'rgba(44, 62, 80, 0.5)' },
+        },
+        y: {
+          ticks: { color: '#7F8C8D', font: { size: 10 } },
+          grid: { color: 'rgba(44, 62, 80, 0.5)' },
+        },
+      },
+    };
+
+    const labels = MACRO_DATA.map(d => d.label);
+
+    function createLineChart(canvasId, datasets, yConfig = {}) {
+      new Chart(document.getElementById(canvasId), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          ...chartDefaults,
+          scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ...yConfig } },
+          elements: { point: { radius: 2, hoverRadius: 5 }, line: { tension: 0.3, borderWidth: 2 } },
+        },
+      });
+    }
+
+    function renderCharts() {
+      // Gold
+      createLineChart('chartGold', [{
+        label: 'Giá Vàng SJC (triệu)', data: MACRO_DATA.map(d => d.gold_sjc),
+        borderColor: '#FFD700', backgroundColor: 'rgba(255, 215, 0, 0.1)', fill: true,
+      }]);
+
+      // Gas
+      createLineChart('chartGas', [{
+        label: 'Giá Xăng RON95 (đ/lít)', data: MACRO_DATA.map(d => d.gas_ron95),
+        borderColor: '#FF6B35', backgroundColor: 'rgba(255, 107, 53, 0.1)', fill: true,
+      }]);
+
+      // Interest Rates
+      createLineChart('chartRates', [
+        { label: 'LS Huy Động 12T', data: MACRO_DATA.map(d => d.deposit_rate), borderColor: '#4ECDC4', backgroundColor: 'transparent' },
+        { label: 'LS Cho Vay BQ', data: MACRO_DATA.map(d => d.lending_rate), borderColor: '#E74C3C', backgroundColor: 'transparent' },
+      ]);
+
+      // CPI & GDP
+      createLineChart('chartCpiGdp', [
+        { label: 'CPI YoY (%)', data: MACRO_DATA.map(d => d.cpi), borderColor: '#9B59B6', backgroundColor: 'transparent' },
+        { label: 'GDP Growth (%)', data: MACRO_DATA.map(d => d.gdp_growth), borderColor: '#27AE60', backgroundColor: 'transparent' },
+      ]);
+
+      // Guest vs Macro (dual axis)
+      const guestLabels = MERGED_DATA.filter(d => d.has_guest_data).map(d => d.label);
+      const guestValues = MERGED_DATA.filter(d => d.has_guest_data).map(d => d.total_guests);
+      const gasValues = MERGED_DATA.filter(d => d.has_guest_data).map(d => d.gas_ron95);
+
+      new Chart(document.getElementById('chartGuestVsMacro'), {
+        type: 'bar',
+        data: {
+          labels: guestLabels,
+          datasets: [
+            {
+              label: 'Lượt Khách', data: guestValues, type: 'bar',
+              backgroundColor: 'rgba(230, 126, 34, 0.7)', borderColor: '#E67E22', borderWidth: 1,
+              yAxisID: 'y',
+            },
+            {
+              label: 'Giá Xăng RON95', data: gasValues, type: 'line',
+              borderColor: '#FF6B35', backgroundColor: 'transparent', borderWidth: 3,
+              yAxisID: 'y1', pointRadius: 5, pointHoverRadius: 8,
+            },
+          ],
+        },
+        options: {
+          ...chartDefaults,
+          scales: {
+            x: chartDefaults.scales.x,
+            y: {
+              ...chartDefaults.scales.y,
+              position: 'left',
+              title: { display: true, text: 'Lượt Khách', color: '#E67E22' },
+            },
+            y1: {
+              ...chartDefaults.scales.y,
+              position: 'right',
+              title: { display: true, text: 'Giá Xăng (đ/lít)', color: '#FF6B35' },
+              grid: { drawOnChartArea: false },
+            },
+          },
+        },
+      });
+    }
+
+    // ===== RENDER ALL =====
+    renderKPIs();
+    renderTopCorrelations();
+    renderCorrTable();
+    renderDataTable();
+    renderInsights();
+    renderCharts();
+  </script>
+</body>
+</html>
