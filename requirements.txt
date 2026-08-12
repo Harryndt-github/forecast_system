@@ -1,0 +1,31 @@
+pandas>=2.0.0
+numpy>=1.24.0
+sqlalchemy>=2.0.0
+pymysql>=1.0.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+holidays>=0.40
+lunardate>=0.2.0
+tqdm>=4.60.0
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+scikit-learn>=1.3.0
+
+# ML Libraries (optional but recommended)
+xgboost>=1.7.0
+lightgbm>=4.0.0
+catboost>=1.2.0
+prophet>=1.1.0
+
+# RAG + Local LLM (Phase 6 - Self-Learning)
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+llama-cpp-python>=0.2.0
+
+# LLM Fine-Tuning (Phase 7 - Domain Adaptation, optional)
+# pip install peft trl datasets accelerate bitsandbytes
+# peft>=0.7.0
+# trl>=0.7.0
+# datasets>=2.14.0
+# accelerate>=0.24.0
+# bitsandbytes>=0.41.0  # GPU only, not supported on Apple Silicon
