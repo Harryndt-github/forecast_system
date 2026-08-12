@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Forecast Dashboard</title>
+    <meta name="description" content="Real-time accuracy monitoring dashboard for AI Forecast System">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header" id="main-header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">📊</span>
+                <h1>AI Forecast</h1>
+            </div>
+            <span class="badge" id="system-date">Loading...</span>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-ghost" id="btn-refresh" onclick="loadAll()">
+                <span>↻</span> Refresh
+            </button>
+            <div class="status-indicator" id="status-dot">
+                <span class="dot"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs" id="main-nav">
+        <button class="tab active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+        <button class="tab" data-tab="forecast" onclick="switchTab('forecast')">🔮 Forecast</button>
+        <button class="tab" data-tab="restaurants" onclick="switchTab('restaurants')">Restaurants</button>
+        <button class="tab" data-tab="trends" onclick="switchTab('trends')">Trends</button>
+        <button class="tab" data-tab="models" onclick="switchTab('models')">Models</button>
+        <button class="tab" data-tab="alerts" onclick="switchTab('alerts')">Alerts</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content">
+
+        <!-- OVERVIEW TAB -->
+        <section id="tab-overview" class="tab-content active">
+            <!-- KPI Cards -->
+            <div class="kpi-grid" id="kpi-grid">
+                <div class="kpi-card" id="kpi-mae">
+                    <div class="kpi-label">MAE</div>
+                    <div class="kpi-value" id="v-mae">--</div>
+                    <div class="kpi-sub">guests</div>
+                </div>
+                <div class="kpi-card accent" id="kpi-mape">
+                    <div class="kpi-label">MAPE</div>
+                    <div class="kpi-value" id="v-mape">--</div>
+                    <div class="kpi-sub">%</div>
+                </div>
+                <div class="kpi-card" id="kpi-hit">
+                    <div class="kpi-label">Hit Rate</div>
+                    <div class="kpi-value" id="v-hit">--</div>
+                    <div class="kpi-sub">%</div>
+                </div>
+                <div class="kpi-card" id="kpi-bias">
+                    <div class="kpi-label">Bias</div>
+                    <div class="kpi-value" id="v-bias">--</div>
+                    <div class="kpi-sub" id="v-bias-dir">--</div>
+                </div>
+                <div class="kpi-card" id="kpi-restaurants">
+                    <div class="kpi-label">Restaurants</div>
+                    <div class="kpi-value" id="v-restaurants">--</div>
+                    <div class="kpi-sub">tracked</div>
+                </div>
+                <div class="kpi-card" id="kpi-samples">
+                    <div class="kpi-label">Samples</div>
+                    <div class="kpi-value" id="v-samples">--</div>
+                    <div class="kpi-sub">predictions</div>
+                </div>
+            </div>
+
+            <!-- Rolling Accuracy -->
+            <div class="card" id="rolling-card">
+                <h2 class="card-title">📈 Rolling Accuracy</h2>
+                <div class="rolling-grid" id="rolling-grid">
+                    <div class="rolling-item" id="rolling-loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Weekday + Hourly Charts -->
+            <div class="chart-row">
+                <div class="card half" id="weekday-card">
+                    <h2 class="card-title">📅 Weekday Accuracy</h2>
+                    <div class="bar-chart" id="weekday-chart"></div>
+                </div>
+                <div class="card half" id="hourly-card">
+                    <h2 class="card-title">🕐 Hourly Accuracy</h2>
+                    <div class="bar-chart" id="hourly-chart"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RESTAURANTS TAB -->
+        <section id="tab-restaurants" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">🏪 Restaurant Performance</h2>
+                <div class="search-bar">
+                    <input type="text" id="restaurant-search" placeholder="Search restaurant code..."
+                        oninput="filterRestaurants()">
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="restaurant-table">
+                        <thead>
+                            <tr>
+                                <th>Restaurant</th>
+                                <th>MAE</th>
+                                <th>MAPE %</th>
+                                <th>Bias</th>
+                                <th>Hit Rate</th>
+                                <th>Samples</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="restaurant-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRENDS TAB -->
+        <section id="tab-trends" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">📈 Daily Accuracy Trend</h2>
+                <div class="trend-chart" id="daily-trend-chart"></div>
+            </div>
+            <div class="card">
+                <h2 class="card-title">📜 Accuracy History</h2>
+                <div class="trend-chart" id="history-chart"></div>
+            </div>
+        </section>
+
+        <!-- MODELS TAB -->
+        <section id="tab-models" class="tab-content">
+            <div class="card" id="model-comparison-card">
+                <h2 class="card-title">🤖 Model Comparison: Ensemble vs AI Raw</h2>
+                <div class="model-grid" id="model-grid">
+                    <div class="model-card">Loading...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FORECAST VIEWER TAB -->
+        <section id="tab-forecast" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">🔮 Forecast Results</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px;">
+                    Xem số khách dự đoán cho từng nhà hàng. Chọn restaurant và chế độ xem bên dưới.
+                </p>
+                <div class="forecast-controls">
+                    <div class="control-group">
+                        <label class="control-label">Restaurant</label>
+                        <select id="forecast-restaurant-select" onchange="loadForecastView()">
+                            <option value="">-- Tất cả --</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Chế độ xem</label>
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" id="btn-mode-summary"
+                                onclick="setForecastMode('summary')">📊 Tổng hợp ngày</button>
+                            <button class="toggle-btn" id="btn-mode-hourly" onclick="setForecastMode('hourly')">🕐 Chi
+                                tiết giờ</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Phạm vi</label>
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" id="btn-scope-future"
+                                onclick="setForecastScope('future')">Tương lai</button>
+                            <button class="toggle-btn" id="btn-scope-all" onclick="setForecastScope('all')">Tất
+                                cả</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="forecast-results-card">
+                <div class="table-container">
+                    <table class="data-table" id="forecast-table">
+                        <thead id="forecast-thead"></thead>
+                        <tbody id="forecast-tbody"></tbody>
+                    </table>
+                </div>
+                <div id="forecast-empty" class="empty-state" style="display:none;">
+                    <div class="empty-icon">🔮</div>
+                    <p>Chưa có dữ liệu forecast. Chạy pipeline trước để tạo dự đoán.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ALERTS TAB -->
+        <section id="tab-alerts" class="tab-content">
+            <div class="card" id="drift-card">
+                <h2 class="card-title">🚨 Drift Detection</h2>
+                <div id="drift-content">Loading...</div>
+            </div>
+            <div class="card" id="problems-card">
+                <h2 class="card-title">⚠️ Problem Restaurants</h2>
+                <div id="problems-content">Loading...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <span>AI Forecast System v5.0 • Phase 5: Dashboard + Parallel + Auto-Tune</span>
+    </footer>
+
+    <script src="/static/dashboard.js"></script>
+</body>
+
+</html>
