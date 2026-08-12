@@ -1,0 +1,92 @@
+# ==============================================================================
+# SECRETS & CREDENTIALS  — nhóm này TUYỆT ĐỐI không được commit
+# ==============================================================================
+.env
+*.env
+!.env.example
+config/.env
+config/*.env
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+secrets/
+
+# ==============================================================================
+# PYTHON
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.python-version
+
+# ==============================================================================
+# TESTING & TOOLING CACHE
+# ==============================================================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.hypothesis/
+
+# ==============================================================================
+# ML ARTIFACTS  — nặng, không version bằng git (dùng DVC/S3/MLflow)
+# ==============================================================================
+model_cache/
+models/
+knowledge_db/
+catboost_info/
+lightning_logs/
+*.pkl
+*.joblib
+*.gguf
+*.onnx
+*.pt
+*.h5
+
+# ==============================================================================
+# DỮ LIỆU KINH DOANH  — không đưa dữ liệu khách hàng lên repo
+# ==============================================================================
+*.xlsx
+*.xls
+*.csv
+*.parquet
+*.bak
+!tests/fixtures/*.csv
+!tests/fixtures/*.xlsx
+accuracy_history.json
+brain_memory.json
+ishushi_output/
+output/
+data/
+
+# ==============================================================================
+# LOGS
+# ==============================================================================
+logs/
+*.log
+
+# ==============================================================================
+# IDE & OS
+# ==============================================================================
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Ghi chú cá nhân, không public
+ONBOARDING_BRIEF.md

@@ -1,0 +1,40 @@
+services:
+  forecast-api:
+    build: .
+    image: forecast-system:local
+    container_name: forecast-api
+    restart: unless-stopped
+    # SECURITY: chỉ publish ra loopback của host, ra ngoài qua reverse proxy
+    ports:
+      - "127.0.0.1:5050:5050"
+    env_file:
+      - config/.env          # KHÔNG commit file này
+    environment:
+      APP_ENV: production
+      DASHBOARD_HOST: 0.0.0.0   # bind trong container; host đã giới hạn ở trên
+    volumes:
+      - ./output:/app/output
+      - ./logs:/app/logs
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+  forecast-batch:
+    build: .
+    image: forecast-system:local
+    container_name: forecast-batch
+    profiles: ["batch"]        # docker compose --profile batch run forecast-batch
+    env_file:
+      - config/.env
+    environment:
+      APP_ENV: production
+    volumes:
+      - ./output:/app/output
+      - ./logs:/app/logs
+    command: ["forecast-run", "--mode", "daily"]
